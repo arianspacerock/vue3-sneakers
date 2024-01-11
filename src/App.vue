@@ -1,5 +1,5 @@
 <script setup>
-import {onMounted, ref, watch, reactive} from "vue";
+import {onMounted, ref, watch, reactive, provide} from "vue";
 import axios from "axios";
 
 import Header from './components/Header.vue'
@@ -9,31 +9,74 @@ import Drawer from "@/components/Drawer.vue";
 const items = ref([]) // { value: [] }
 
 const filters = reactive({
-  sortBy: '',
-  searchQuery: '',
+  sortBy: 'title',
+  searchQuery: ''
 })
-
-const onChangeSelect = event => {
+const onChangeSelect = (event) => {
   filters.sortBy = event.target.value
 }
 
-onMounted(async () => {
-  try {
-    const {data} = await axios.get('https://3740aa96c0805c9e.mokky.dev/items')
-    items.value = data
-  } catch (err) {
-    console.log(err)
-  }
-})
+const onChangeSearchInput = (event) => {
+  filters.searchQuery = event.target.value
+}
 
-watch(filters,async () => {
+const fetchFavorites = async () => {
   try {
-    const {data} = await axios.get('https://3740aa96c0805c9e.mokky.dev/items?sortBy=' + filters.sortBy)
-    items.value = data
+    const {data : favorites} = await axios.get('https://3740aa96c0805c9e.mokky.dev/favorites')
+
+    items.value = items.value.map(item => {
+      const favorite = favorites.find((favorite) => favorite.parentId === item.id)
+
+      if (!favorite) {
+        return item
+      }
+
+      return {
+        ...item,
+        isFavorite: true,
+        favoriteId: favorite.id,
+      }
+    })
   } catch (err) {
     console.log(err)
   }
+}
+
+const addToFavorite = async (item) => {
+  item.isFavorite = !item.isFavorite
+}
+
+const fetchItems = async () => {
+  try {
+    const params = {
+      sortBy: filters.sortBy
+    }
+
+    if (filters.searchQuery) {
+      params.title = `*${filters.searchQuery}*`
+    }
+
+    const {data} = await axios.get('https://3740aa96c0805c9e.mokky.dev/items', {
+      params
+    })
+
+    items.value = data.map((obj) => ({
+      ...obj,
+      isFavorite: false,
+      isAdded: false
+    }))
+
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+onMounted(async () => {
+  await fetchItems()
+  await fetchFavorites()
 })
+watch(filters, fetchItems)
+provide('addToFavorite', addToFavorite)
 </script>
 
 <template>
@@ -54,6 +97,7 @@ watch(filters,async () => {
           <div class="relative">
             <img class="absolute left-4 top-3" src="/search.svg" alt="search">
             <input
+                @input="onChangeSearchInput"
                 class="border rounded-md pl-11 py-2 pr-4 outline-none focus:border-gray-400"
                 type="text"
                 placeholder="Поиск..."
@@ -62,7 +106,7 @@ watch(filters,async () => {
         </div>
       </div>
       <div class="mt-10">
-        <CardList :items="items"/>
+        <CardList :items="items" @addToFavorite="addToFavorite"/>
       </div>
 
     </div>
