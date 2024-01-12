@@ -7,11 +7,32 @@ import CardList from "@/components/CardList.vue";
 import Drawer from "@/components/Drawer.vue";
 
 const items = ref([]) // { value: [] }
+const cart = ref([])
+
+
+const drawerOpen = ref(false)
+const closeDrawer = () => {
+  drawerOpen.value = false
+}
+
+const openDrawer = () => {
+  drawerOpen.value = true
+}
 
 const filters = reactive({
   sortBy: 'title',
   searchQuery: ''
 })
+
+const addToCart = (item) => {
+  if (!item.isAdded) {
+    cart.value.push(item)
+    item.isAdded = true
+  } else {
+    cart.value.splice(cart.value.indexOf(item), 1)
+    item.isAdded = false
+  }
+}
 const onChangeSelect = (event) => {
   filters.sortBy = event.target.value
 }
@@ -24,7 +45,7 @@ const fetchFavorites = async () => {
   try {
     const {data : favorites} = await axios.get('https://3740aa96c0805c9e.mokky.dev/favorites')
 
-    items.value = items.value.map(item => {
+    items.value = items.value.map((item) => {
       const favorite = favorites.find((favorite) => favorite.parentId === item.id)
 
       if (!favorite) {
@@ -43,7 +64,25 @@ const fetchFavorites = async () => {
 }
 
 const addToFavorite = async (item) => {
-  item.isFavorite = !item.isFavorite
+  try {
+    if (!item.isFavorite) {
+      const obj = {
+        parentId: item.id,
+      }
+      item.favoriteId = true
+
+      const { data } = await axios.post('https://3740aa96c0805c9e.mokky.dev/favorites', obj)
+
+      item.favoriteId = data.id
+    } else {
+      item.isFavorite = false
+
+      await axios.delete(`https://3740aa96c0805c9e.mokky.dev/favorites/${item.favoriteId}`)
+      item.favoriteId = null
+    }
+  } catch (err) {
+    console.log(err)
+  }
 }
 
 const fetchItems = async () => {
@@ -63,6 +102,7 @@ const fetchItems = async () => {
     items.value = data.map((obj) => ({
       ...obj,
       isFavorite: false,
+      favoriteId: null,
       isAdded: false
     }))
 
@@ -76,14 +116,18 @@ onMounted(async () => {
   await fetchFavorites()
 })
 watch(filters, fetchItems)
-provide('addToFavorite', addToFavorite)
+provide('cart', {
+  cart,
+  closeDrawer,
+  openDrawer
+})
 </script>
 
 <template>
- <!--<Drawer/>-->
+ <Drawer v-if="drawerOpen"/>
 
   <div class="bg-white w-4/5 m-auto rounded-xl shadow-xl mt-14">
-    <Header/>
+    <Header @open-drawer="openDrawer"/>
     <div class="p-10">
       <div class="flex justify-between items-center">
         <h2 class="text-3xl font-bold mb-8">Все кроссовки</h2>
@@ -106,7 +150,7 @@ provide('addToFavorite', addToFavorite)
         </div>
       </div>
       <div class="mt-10">
-        <CardList :items="items" @addToFavorite="addToFavorite"/>
+        <CardList :items="items" @add-to-favorite="addToFavorite" @add-to-cart="addToCart"/>
       </div>
 
     </div>
