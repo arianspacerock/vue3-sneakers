@@ -19,7 +19,6 @@ defineProps({
     <DrawerHead/>
 
     <div class="flex h-full items-center" v-if="!totalPrice">
-
       <InfoBlock
           title="Корзина пустая"
           description="Добавьте хотя бы одну пару кроссовок, чтобы сделать заказ"
@@ -31,7 +30,6 @@ defineProps({
       <CartItemList/>
 
       <div class="flex flex-col gap-4 mt-7" v-if="totalPrice">
-
         <div class="flex gap-2">
           <span>Итого: </span>
           <div class="flex-1 border-b border-dashed"></div>
@@ -50,7 +48,6 @@ defineProps({
             class="mt-4 transition bg-lime-500 text-white rounded-xl w-full py-3 hover:bg-lime-600 disabled:bg-slate-400 cursor-pointer">
           Оформить заказ
         </button>
-
 
       </div>
 
