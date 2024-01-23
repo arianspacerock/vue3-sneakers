@@ -1,24 +1,27 @@
 <script setup>
- import { ref, onMounted} from "vue";
- import axios from "axios";
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
 
- const favorites = ref([])
+import CardList from '../components/CardList.vue'
 
+const favorites = ref([])
 
- onMounted(async () => {
-   try {
-     const {data} = await axios.get('https://3740aa96c0805c9e.mokky.dev/favorites?_relations=items')
+onMounted(async () => {
+  try {
+    const { data } = await axios.get(
+        'https://3740aa96c0805c9e.mokky.dev/favorites?_relations=items'
+    )
 
-     favorites.value = data
-   } catch (err) {
-     console.log(err)
-   }
- })
+    favorites.value = data.map((obj) => obj.item)
+  } catch (err) {
+    console.log(err)
+  }
+})
 </script>
 
 <template>
- <div>
-   <h1>Избранное</h1>
- </div>
+  <h2 class="text-3xl font-bold mb-8">Избранное</h2>
+
+  <CardList :items="favorites" is-favorites />
 </template>
 

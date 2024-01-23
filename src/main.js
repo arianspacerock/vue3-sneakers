@@ -5,7 +5,7 @@ import { createRouter, createWebHistory} from "vue-router";
 import App from './App.vue'
 
 import Home from "./pages/Home.vue";
-import Favorites from "./pages/Home.vue";
+import Favorites from "./pages/Favorites.vue";
 
 const app = createApp(App)
 
